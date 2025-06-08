@@ -4,42 +4,49 @@
   <meta charset="UTF-8" />
   <title>UEX Fuel Finder</title>
   <style>
-    body {
+    html, body {
+      width: 100%;
+      height: 100%;
       font-family: sans-serif;
       background-color: #111;
       color: white;
       margin: 0;
-      padding: 0.5rem;
+      padding: 0;
+      box-sizing: border-box;
+      overflow: hidden;
     }
 
     h1 {
       text-align: center;
-      margin: 0.5rem 0;
+      margin: 0.25rem 0;
+      font-size: 1.25rem;
     }
 
     .controls {
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 1rem;
-      margin-bottom: 1rem;
+      gap: 0.5rem;
+      margin: 0.25rem;
+      flex-wrap: wrap;
     }
 
     .toggle-container {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.25rem;
     }
 
     .toggle-container span {
       font-weight: bold;
+      font-size: 0.85rem;
     }
 
     .toggle-switch {
       position: relative;
       display: inline-block;
-      width: 60px;
-      height: 30px;
+      width: 40px;
+      height: 20px;
     }
 
     .toggle-switch input {
@@ -64,8 +71,8 @@
     .slider:before {
       position: absolute;
       content: "";
-      height: 26px;
-      width: 26px;
+      height: 16px;
+      width: 16px;
       left: 2px;
       bottom: 2px;
       background-color: white;
@@ -74,12 +81,12 @@
     }
 
     input:checked + .slider:before {
-      transform: translateX(30px);
+      transform: translateX(20px);
     }
 
     select {
-      padding: 0.5rem;
-      font-size: 1rem;
+      padding: 0.25rem;
+      font-size: 0.85rem;
       background-color: #222;
       color: white;
       border: 1px solid #444;
@@ -88,17 +95,19 @@
 
     .container {
       display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 2rem;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem;
     }
 
     .fuel-box {
       background-color: #222;
       border: 1px solid #333;
-      border-radius: 10px;
+      border-radius: 8px;
       padding: 0.5rem;
-      width: 300px;
+      width: 95%;
+      max-width: 400px;
       display: none;
     }
 
@@ -108,13 +117,15 @@
 
     .fuel-box h2 {
       text-align: center;
-      margin: 0.5rem 0 1rem;
+      margin: 0 0 0.5rem;
+      font-size: 1rem;
     }
 
     .entry {
       display: flex;
       justify-content: space-between;
-      padding: 0.5rem 0;
+      font-size: 0.85rem;
+      padding: 0.25rem 0;
       border-bottom: 1px solid #444;
     }
 
@@ -124,24 +135,9 @@
 
     .last-updated {
       text-align: center;
-      margin-top: 2rem;
-      font-size: 0.9rem;
+      margin-top: 0.5rem;
+      font-size: 0.75rem;
       color: white;
-    }
-
-    @media (max-width: 700px) {
-      .container {
-        flex-direction: column;
-        align-items: center;
-      }
-
-      .fuel-box {
-        width: 90%;
-      }
-
-      .controls {
-        flex-direction: column;
-      }
     }
   </style>
 </head>
@@ -157,7 +153,6 @@
       </label>
       <span>QT</span>
     </div>
-
     <div class="system-selector">
       <label for="systemSelect">System:</label>
       <select id="systemSelect">
