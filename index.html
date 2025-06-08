@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=427, height=398" />
+  <title>Fuel Prices</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Electrolize&display=swap');
+    body {
+      font-family: 'Electrolize', sans-serif;
+      background-color: #000;
+      margin: 0;
+      padding: 10px;
+      color: #000;
+      width: 427px;
+      height: 398px;
+      box-sizing: border-box;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #f7aa08;
+      color: #000;
+      text-align: center;
+      table-layout: fixed;
+    }
+    th, td {
+      padding: 6px;
+      border: 1px solid #5c5c57;
+      word-wrap: break-word;
+    }
+    th {
+      background-color: #5c5c57;
+      color: #fff;
+    }
+    #timestamp {
+      margin-top: 5px;
+      font-size: 0.85rem;
+      text-align: center;
+      color: black;
+    }
+  </style>
+</head>
+<body>
+  <table id="fuelTable" aria-label="Fuel Prices Table">
+    <thead>
+      <tr>
+        <th>Commodity</th>
+        <th>Price</th>
+        <th>Location</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div id="timestamp">Last updated: --:-- UTC</div>
+
+  <script>
+    const targetIds = [1, 2, 85, 84, 70, 61, 124, 71];
+    const apiUrl = 'https://api.uexcorp.space/2.0/fuel_prices_all';
+
+    async function fetchFuelPrices() {
+      try {
+        const response = await fetch(apiUrl);
+        if (!response.ok) throw new Error('Network response was not ok');
+        const result = await response.json();
+        const data = result.data;
+
+        // Filter and sort data by your specified ID order
+        const filtered = data.filter(item => targetIds.includes(item.id));
+        filtered.sort((a, b) => targetIds.indexOf(a.id) - targetIds.indexOf(b.id));
+
+        const tbody = document.querySelector('#fuelTable tbody');
+        tbody.innerHTML = '';
+
+        filtered.forEach(item => {
+          const row = `<tr>
+            <td>${item.commodity_name}</td>
+            <td>${item.price_buy} aUEC</td>
+            <td>${item.terminal_name}</td>
+          </tr>`;
+          tbody.insertAdjacentHTML('beforeend', row);
+        });
+
+        // Update timestamp in HH:MM UTC
+        const now = new Date();
+        const hours = String(now.getUTCHours()).padStart(2, '0');
+        const minutes = String(now.getUTCMinutes()).padStart(2, '0');
+        document.getElementById('timestamp').innerText = `Last updated: ${hours}:${minutes} UTC`;
+
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        document.querySelector('#fuelTable tbody').innerHTML = '<tr><td colspan="3">Error loading data</td></tr>';
+      }
+    }
+
+    fetchFuelPrices();
+    setInterval(fetchFuelPrices, 15 * 60 * 1000); // Refresh every 15 minutes
+  </script>
+</body>
+</html>
