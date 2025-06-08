@@ -21,7 +21,7 @@
       justify-content: center;
       align-items: center;
       gap: 25px;
-      margin: 24px 0 6px 0;
+      margin: 30px 0 6px 0;
     }
 
     .toggle-container {
@@ -98,7 +98,7 @@
       flex-direction: column;
       align-items: center;
       gap: 0.25rem;
-      padding: 0.25rem;
+      padding: 6px 0.25rem 0;
     }
 
     .fuel-box {
@@ -235,9 +235,10 @@
           return selectedSystem === "all" || system === selectedSystem;
         });
 
-        const containerHeight = window.innerHeight;
+        const container = document.querySelector(".fuel-box");
+        const containerHeight = container ? container.clientHeight : 200;
         const rowHeight = 38;
-        const maxRows = Math.max(3, Math.floor((containerHeight - 200) / rowHeight));
+        const maxRows = Math.max(3, Math.floor((window.innerHeight - 300) / rowHeight));
 
         const hydrogen = filtered
           .filter(e => e.id_commodity === 104)
