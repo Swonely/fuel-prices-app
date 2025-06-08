@@ -2,4 +2,4 @@
 
 The Url to use this app is currently:
 
-https://swonely.github.io/fuel-prices-app/fuel_v1.html
+https://swonely.github.io/fuel-prices-app/fuel_v8.html
