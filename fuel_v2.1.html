@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>UEX Fuel Finder</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #111;
+      color: white;
+      margin: 0;
+      padding: 0.5rem;
+    }
+
+    h1 {
+      text-align: center;
+      margin: 0.5rem 0;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .toggle-container span {
+      font-weight: bold;
+    }
+
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 30px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #444;
+      border: 1px solid #666;
+      transition: 0.4s;
+      border-radius: 20px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 26px;
+      width: 26px;
+      left: 2px;
+      bottom: 2px;
+      background-color: white;
+      transition: 0.4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(30px);
+    }
+
+    select {
+      padding: 0.5rem;
+      font-size: 1rem;
+      background-color: #222;
+      color: white;
+      border: 1px solid #444;
+      border-radius: 4px;
+    }
+
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 2rem;
+    }
+
+    .fuel-box {
+      background-color: #222;
+      border: 1px solid #333;
+      border-radius: 10px;
+      padding: 0.5rem;
+      width: 300px;
+      display: none;
+    }
+
+    .fuel-box.active {
+      display: block;
+    }
+
+    .fuel-box h2 {
+      text-align: center;
+      margin: 0.5rem 0 1rem;
+    }
+
+    .entry {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #444;
+    }
+
+    .entry:last-child {
+      border-bottom: none;
+    }
+
+    .last-updated {
+      text-align: center;
+      margin-top: 2rem;
+      font-size: 0.9rem;
+      color: white;
+    }
+
+    @media (max-width: 700px) {
+      .container {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .fuel-box {
+        width: 90%;
+      }
+
+      .controls {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>UEX Fuel Finder</h1>
+
+  <div class="controls">
+    <div class="toggle-container">
+      <span>HYD</span>
+      <label class="toggle-switch">
+        <input type="checkbox" id="fuelToggle">
+        <span class="slider"></span>
+      </label>
+      <span>QT</span>
+    </div>
+
+    <div class="system-selector">
+      <label for="systemSelect">System:</label>
+      <select id="systemSelect">
+        <option value="all">All</option>
+        <option value="Stanton">Stanton</option>
+        <option value="Pyro">Pyro</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="fuel-box" id="hydrogen">
+      <h2>Hydrogen</h2>
+      <div id="hydrogenList"></div>
+    </div>
+
+    <div class="fuel-box" id="quantum">
+      <h2>Quantum</h2>
+      <div id="quantumList"></div>
+    </div>
+  </div>
+
+  <div class="last-updated" id="lastUpdated">Last Updated: --:-- UTC</div>
+
+  <script>
+    const FUEL_URL = 'https://api.uexcorp.space/2.0/fuel_prices_all';
+    const hydrogenList = document.getElementById('hydrogenList');
+    const quantumList = document.getElementById('quantumList');
+    const fuelToggle = document.getElementById('fuelToggle');
+    const hydrogenBox = document.getElementById('hydrogen');
+    const quantumBox = document.getElementById('quantum');
+    const systemSelect = document.getElementById('systemSelect');
+    const lastUpdated = document.getElementById('lastUpdated');
+
+    const terminalToSystem = {
+      "New Babbage": "Stanton",
+      "Port Tressler": "Stanton",
+      "Area 18": "Stanton",
+      "Baijini Point": "Stanton",
+      "Lorville": "Stanton",
+      "Everus Harbor": "Stanton",
+      "Orison": "Stanton",
+      "GrimHEX": "Stanton",
+      "CRU-L1": "Stanton",
+      "CRU-L4": "Stanton",
+      "CRU-L5": "Stanton",
+      "HUR-L1": "Stanton",
+      "HUR-L2": "Stanton",
+      "HUR-L3": "Stanton",
+      "HUR-L4": "Stanton",
+      "HUR-L5": "Stanton",
+      "MIC-L1": "Stanton",
+      "MIC-L2": "Stanton",
+      "MIC-L3": "Stanton",
+      "MIC-L4": "Stanton",
+      "MIC-L5": "Stanton",
+      "ARC-L1": "Stanton",
+      "ARC-L2": "Stanton",
+      "ARC-L3": "Stanton",
+      "ARC-L4": "Stanton",
+      "ARC-L5": "Stanton",
+      "Ruin": "Pyro",
+      "Starlight": "Pyro",
+      "Checkmate": "Pyro",
+      "Endgame": "Pyro",
+      "Rod's Fuel 'N Supplies": "Pyro",
+      "Windfall": "Pyro",
+      "Sunset Mesa": "Pyro"
+    };
+
+    async function fetchFuelPrices() {
+      try {
+        const res = await fetch(FUEL_URL);
+        const data = await res.json();
+        const entries = data.data;
+        const selectedSystem = systemSelect.value;
+
+        const filtered = entries.filter(entry => {
+          const system = terminalToSystem[entry.terminal_name] || "Unknown";
+          return selectedSystem === "all" || system === selectedSystem;
+        });
+
+        const hydrogen = filtered
+          .filter(e => e.id_commodity === 104)
+          .sort((a, b) => a.price_buy - b.price_buy)
+          .slice(0, 5);
+
+        const quantum = filtered
+          .filter(e => e.id_commodity === 87)
+          .sort((a, b) => a.price_buy - b.price_buy)
+          .slice(0, 5);
+
+        hydrogenList.innerHTML = hydrogen.map(e => `
+          <div class="entry">
+            <span>${e.terminal_name}</span>
+            <span>${e.price_buy} aUEC</span>
+          </div>`).join("");
+
+        quantumList.innerHTML = quantum.map(e => `
+          <div class="entry">
+            <span>${e.terminal_name}</span>
+            <span>${e.price_buy} aUEC</span>
+          </div>`).join("");
+
+        updateFuelVisibility();
+        const now = new Date();
+        lastUpdated.textContent = `Last Updated: ${now.getUTCHours().toString().padStart(2, '0')}:${now.getUTCMinutes().toString().padStart(2, '0')} UTC`;
+      } catch (error) {
+        hydrogenList.innerHTML = quantumList.innerHTML = '<p>Error loading fuel data.</p>';
+        console.error('Error fetching fuel prices:', error);
+      }
+    }
+
+    function updateFuelVisibility() {
+      if (fuelToggle.checked) {
+        hydrogenBox.classList.remove('active');
+        quantumBox.classList.add('active');
+      } else {
+        quantumBox.classList.remove('active');
+        hydrogenBox.classList.add('active');
+      }
+    }
+
+    fuelToggle.addEventListener('change', updateFuelVisibility);
+    systemSelect.addEventListener('change', fetchFuelPrices);
+    fetchFuelPrices();
+    setInterval(fetchFuelPrices, 15 * 60 * 1000);
+  </script>
+</body>
+</html>
