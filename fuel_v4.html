@@ -16,19 +16,23 @@
       overflow: hidden;
     }
 
-    h1 {
-      text-align: center;
+    .logo {
+      display: flex;
+      justify-content: center;
+      align-items: center;
       margin: 0.25rem 0;
-      font-size: 1.25rem;
+    }
+
+    .logo img {
+      height: 32px;
     }
 
     .controls {
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 0.5rem;
-      margin: 0.25rem;
-      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 0.25rem;
     }
 
     .toggle-container {
@@ -39,14 +43,14 @@
 
     .toggle-container span {
       font-weight: bold;
-      font-size: 0.85rem;
+      font-size: 1rem;
     }
 
     .toggle-switch {
       position: relative;
       display: inline-block;
-      width: 40px;
-      height: 20px;
+      width: 70px;
+      height: 36px;
     }
 
     .toggle-switch input {
@@ -71,8 +75,8 @@
     .slider:before {
       position: absolute;
       content: "";
-      height: 16px;
-      width: 16px;
+      height: 30px;
+      width: 30px;
       left: 2px;
       bottom: 2px;
       background-color: white;
@@ -81,12 +85,16 @@
     }
 
     input:checked + .slider:before {
-      transform: translateX(20px);
+      transform: translateX(34px);
+    }
+
+    .system-selector {
+      font-weight: bold;
     }
 
     select {
       padding: 0.25rem;
-      font-size: 0.85rem;
+      font-size: 1rem;
       background-color: #222;
       color: white;
       border: 1px solid #444;
@@ -115,17 +123,11 @@
       display: block;
     }
 
-    .fuel-box h2 {
-      text-align: center;
-      margin: 0 0 0.5rem;
-      font-size: 1rem;
-    }
-
     .entry {
       display: flex;
       justify-content: space-between;
-      font-size: 0.85rem;
-      padding: 0.25rem 0;
+      font-size: 1.25rem;
+      padding: 0.4rem 0;
       border-bottom: 1px solid #444;
     }
 
@@ -142,7 +144,9 @@
   </style>
 </head>
 <body>
-  <h1>UEX Fuel Finder</h1>
+  <div class="logo">
+    <img src="https://static.uexcorp.space/img/logo.png" alt="UEX Fuel Finder Logo">
+  </div>
 
   <div class="controls">
     <div class="toggle-container">
@@ -165,12 +169,10 @@
 
   <div class="container">
     <div class="fuel-box" id="hydrogen">
-      <h2>Hydrogen</h2>
       <div id="hydrogenList"></div>
     </div>
 
     <div class="fuel-box" id="quantum">
-      <h2>Quantum</h2>
       <div id="quantumList"></div>
     </div>
   </div>
@@ -227,7 +229,9 @@
       try {
         const res = await fetch(FUEL_URL);
         const data = await res.json();
-        const entries = data.data;
+        const entries = Array.isArray(data) ? data : data.data;
+        if (!Array.isArray(entries)) throw new Error("Unexpected API response format");
+
         const selectedSystem = systemSelect.value;
 
         const filtered = entries.filter(entry => {
