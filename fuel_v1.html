@@ -148,8 +148,6 @@
       <label for="systemSelect">System:</label>
       <select id="systemSelect">
         <option value="all">All</option>
-        <option value="Stanton">Stanton</option>
-        <option value="Pyro">Pyro</option>
       </select>
     </div>
     <div class="toggle-container">
@@ -177,6 +175,8 @@
 
   <script>
     const FUEL_URL = 'https://api.uexcorp.space/2.0/fuel_prices_all';
+    const TERMINALS_URL = 'https://api.uexcorp.space/2.0/terminals';
+
     const hydrogenList = document.getElementById('hydrogenList');
     const quantumList = document.getElementById('quantumList');
     const fuelToggle = document.getElementById('fuelToggle');
@@ -185,41 +185,40 @@
     const systemSelect = document.getElementById('systemSelect');
     const lastUpdated = document.getElementById('lastUpdated');
 
-    const terminalToSystem = {
-      "New Babbage": "Stanton",
-      "Port Tressler": "Stanton",
-      "Area 18": "Stanton",
-      "Baijini Point": "Stanton",
-      "Lorville": "Stanton",
-      "Everus Harbor": "Stanton",
-      "Orison": "Stanton",
-      "GrimHEX": "Stanton",
-      "CRU-L1": "Stanton",
-      "CRU-L4": "Stanton",
-      "CRU-L5": "Stanton",
-      "HUR-L1": "Stanton",
-      "HUR-L2": "Stanton",
-      "HUR-L3": "Stanton",
-      "HUR-L4": "Stanton",
-      "HUR-L5": "Stanton",
-      "MIC-L1": "Stanton",
-      "MIC-L2": "Stanton",
-      "MIC-L3": "Stanton",
-      "MIC-L4": "Stanton",
-      "MIC-L5": "Stanton",
-      "ARC-L1": "Stanton",
-      "ARC-L2": "Stanton",
-      "ARC-L3": "Stanton",
-      "ARC-L4": "Stanton",
-      "ARC-L5": "Stanton",
-      "Ruin": "Pyro",
-      "Starlight": "Pyro",
-      "Checkmate": "Pyro",
-      "Endgame": "Pyro",
-      "Rod's Fuel 'N Supplies": "Pyro",
-      "Windfall": "Pyro",
-      "Sunset Mesa": "Pyro"
-    };
+    let terminalToSystem = {};
+    let currentFuelData = [];
+
+    async function fetchTerminalSystems() {
+      try {
+        const res = await fetch(TERMINALS_URL);
+        const result = await res.json();
+
+        const data = Array.isArray(result) ? result : result.data;
+        if (!Array.isArray(data)) throw new Error("Unexpected terminal API response format");
+
+        const systemMap = {};
+        data.forEach(terminal => {
+          const nickname = terminal.nickname;
+          const system = terminal.star_system_name;
+          if (nickname && system) {
+            systemMap[nickname] = system;
+          }
+        });
+
+        terminalToSystem = systemMap;
+      } catch (err) {
+        console.error('Failed to fetch terminal systems', err);
+      }
+    }
+
+    function updateSystemDropdown(systemSet) {
+      const currentSelection = systemSelect.value;
+      const systems = Array.from(systemSet).sort();
+      systemSelect.innerHTML = '<option value="all">All</option>' + systems.map(sys => `<option value="${sys}">${sys}</option>`).join("");
+      if (systems.includes(currentSelection)) {
+        systemSelect.value = currentSelection;
+      }
+    }
 
     async function fetchFuelPrices() {
       try {
@@ -228,47 +227,38 @@
         const entries = Array.isArray(data) ? data : data.data;
         if (!Array.isArray(entries)) throw new Error("Unexpected API response format");
 
-        const selectedSystem = systemSelect.value;
-
-        const filtered = entries.filter(entry => {
-          const system = terminalToSystem[entry.terminal_name] || "Unknown";
-          return selectedSystem === "all" || system === selectedSystem;
-        });
-
-        const rowHeight = 34;
-        const reservedSpace = 120;
-        const availableHeight = window.innerHeight - reservedSpace;
-        const maxRows = Math.max(3, Math.floor(availableHeight / rowHeight) - 1);
-
-        const hydrogen = filtered
-          .filter(e => e.id_commodity === 104)
-          .sort((a, b) => a.price_buy - b.price_buy)
-          .slice(0, maxRows);
-
-        const quantum = filtered
-          .filter(e => e.id_commodity === 87)
-          .sort((a, b) => a.price_buy - b.price_buy)
-          .slice(0, maxRows);
-
-        hydrogenList.innerHTML = hydrogen.map(e => `
-          <div class="entry">
-            <span>${e.terminal_name}</span>
-            <span>${e.price_buy} aUEC</span>
-          </div>`).join("");
-
-        quantumList.innerHTML = quantum.map(e => `
-          <div class="entry">
-            <span>${e.terminal_name}</span>
-            <span>${e.price_buy} aUEC</span>
-          </div>`).join("");
-
-        updateFuelVisibility();
-        const now = new Date();
-        lastUpdated.textContent = `Last Updated: ${now.getUTCHours().toString().padStart(2, '0')}:${now.getUTCMinutes().toString().padStart(2, '0')} UTC`;
+        currentFuelData = entries;
+        renderFuelData(entries);
       } catch (error) {
         hydrogenList.innerHTML = quantumList.innerHTML = '<p>Error loading fuel data.</p>';
         console.error('Error fetching fuel prices:', error);
       }
+    }
+
+    function renderFuelData(entries) {
+      const selectedSystem = systemSelect.value;
+      const filtered = entries.filter(entry => {
+        const system = terminalToSystem[entry.terminal_name] || "Unknown";
+        return selectedSystem === "all" || system === selectedSystem;
+      });
+
+      const rowHeight = 34;
+      const reservedSpace = 120;
+      const availableHeight = window.innerHeight - reservedSpace;
+      const maxRows = Math.max(3, Math.floor(availableHeight / rowHeight) - 1);
+
+      const hydrogen = filtered.filter(e => e.id_commodity === 104).sort((a, b) => a.price_buy - b.price_buy).slice(0, maxRows);
+      const quantum = filtered.filter(e => e.id_commodity === 87).sort((a, b) => a.price_buy - b.price_buy).slice(0, maxRows);
+
+      hydrogenList.innerHTML = hydrogen.map(e => `<div class="entry"><span>${e.terminal_name}</span><span>${e.price_buy} aUEC</span></div>`).join("");
+      quantumList.innerHTML = quantum.map(e => `<div class="entry"><span>${e.terminal_name}</span><span>${e.price_buy} aUEC</span></div>`).join("");
+
+      updateFuelVisibility();
+      const now = new Date();
+      lastUpdated.textContent = `Last Updated: ${now.getUTCHours().toString().padStart(2, '0')}:${now.getUTCMinutes().toString().padStart(2, '0')} UTC`;
+
+      const activeSystems = new Set(entries.map(e => terminalToSystem[e.terminal_name]).filter(Boolean));
+      updateSystemDropdown(activeSystems);
     }
 
     function updateFuelVisibility() {
@@ -282,9 +272,15 @@
     }
 
     fuelToggle.addEventListener('change', updateFuelVisibility);
-    systemSelect.addEventListener('change', fetchFuelPrices);
-    fetchFuelPrices();
-    setInterval(fetchFuelPrices, 15 * 60 * 1000);
+    systemSelect.addEventListener('change', () => renderFuelData(currentFuelData));
+
+    async function init() {
+      await fetchTerminalSystems();
+      await fetchFuelPrices();
+      setInterval(fetchFuelPrices, 15 * 60 * 1000);
+    }
+
+    init();
   </script>
 </body>
 </html>
